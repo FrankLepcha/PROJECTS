@@ -1,0 +1,194 @@
+---
+title: "Student Test Scores Analysis"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Machine Learning with Student Scores
+
+Throughout our study of machine learning, we have seen how to generate more effective models in a more efficient time span. Machines are able to create and analyze models much faster than ordinary humans are. We will be using these tools to create a model showing us which predictors have the most effect on a students `posttest` score.
+
+## Intro to the Data Set
+
+Our data set titled `test_scores` originate as a dataset inside of the IBM SPSS Statistical Software, and can be accessed via [Kaggle](https://www.https://www.kaggle.com/datasets/kwadwoofosu/predict-test-scores-of-students).
+
+Our dataset has several variables inside, and here is a quick description of the important variables:
+  
+  * `school_setting` : Details whether the student attends a urban, suburban, or rural school.
+  * `school_type` : Details whether the student attends a public or non-public school.
+  * `teaching_method` : Details whether the student was taught using the standard or experimental teaching method.
+  * `n_student` : Details the number of students in the class with the student whose scores are being recorded.
+  * `gender` : The gender of the student.
+  * `lunch` : Whether the student qualifies for free or reduced lunch or not (low income or high income).
+  * `pretest` : The pretest score for the student.
+  * `posttest` : The posttest score for the student and the variable we want to predict.
+
+## Questions We Want to Answer
+
+Throughout our analysis of this dataset, we have some key questions we seek to answer:
+
+  * Which variables have the most effect on the `posttest` score?
+  * Do students in lower income brackets perform better than those in higher income brackets on average? What about male students or female students?
+  * How many variables should we expect to see in our final model?
+  * When creating our models, we want to fit our model with a training set and test it with a testing set. We will need to split our full data set into those smaller subsets. What is the best ratio of training to testing to use when splitting our data?
+  * We select the variables we want to use by either best subset selection, forward stepwise selection, or backward stepwise selection. Considering Best subset can sometimes be computationally expensive, which method will be the most efficient to use? How might our models look different if we tried different methods.
+
+## Establishing Our Data Set and Creating the Training and Testing Set
+
+We can now begin setting up our data set to analyze it. We start by loading the appropriate libraries, followed by importing and filtering our data set with the `read.csv` and `select` functions respectively.
+
+```{r}
+library(tidyverse)
+library(leaps)
+library(ISLR2)
+scores <- read.csv("test_scores.csv")
+filter_scores <- select(scores, school_setting, school_type, teaching_method, n_student, gender, lunch, pretest, posttest)
+```
+
+We can now split our full data set into a training and testing set, for the time being we will start by splitting our dataset by a 50/50 ratio of training and testing set. We are also using the `set.seed` function to ensure that we get the same random sample every time we run this block of code.
+
+```{r}
+set.seed(1)
+index <- sample(2133, 1060)
+train <- filter_scores[-index, ]
+test <- filter_scores[index, ]
+```
+
+## Best, Forward, or Backward Selection?
+
+The following code chunks create a model fitted to the training set, but created using the different selection method, first using best (exhaustive) selection, then forward selection, and finally backward selection. This will help us show the best model for each number of variables, and we will attempt to see how these methods differ.
+
+```{r}
+best_reg <- regsubsets(posttest ~ ., data = train, method = 'exhaustive', nvmax = 8)
+best.summary <- summary(best_reg)
+best.summary
+```
+
+```{r}
+forward_reg <- regsubsets(posttest ~ ., data = train, method = 'forward')
+forward.summary <- summary(forward_reg)
+forward.summary
+```
+
+```{r}
+backward_reg <- regsubsets(posttest ~ ., data = train, method = 'backward')
+backward.summary <- summary(backward_reg)
+backward.summary
+```
+
+After testing each model, we see that our best selection, forward selection, and backward selection models all output the same order of variables, and since best selection is feasible for a smaller set of variables, we will continue with best selection for the continuation of the analysis.
+
+## Testing Our Model
+
+The next section details how we will test our model. The `model.matrix` allows us to grab the values to plug into the predictors for the testing set. We then will apply our coefficients for each model and make a prediction based on what our testing data is. We will then figure out the mean squared error and the minimum mean squared error signifies our best model.
+
+```{r}
+test.best <- model.matrix(posttest ~ ., data = test)
+
+val.errors <- rep(NA, 8)
+
+for (i in 1:8) {
+ coefi <- coef(best_reg, id = i)
+ pred <- test.best[, names(coefi)] %*% coefi
+ val.errors[i] <- mean((test$posttest - pred)^2)
+}
+which.max(best.summary$adjr2)
+max(best.summary$adjr2)
+which.min(val.errors)
+min(val.errors)
+```
+
+Our model with the lowest mean squared error comes out to be our model with 5 variables, but we will need to test it with different training and testing ratios.
+
+## New Training and Testing Ratio
+
+With this next block of code, we find our best model with the best training and testing ratio by creating multiple different models with the new ratios. We are ensuring to use the `set.seed` function to make sure anyone can reproduce our results. This code chunk combines a lot of what was covered before in that we fit a model to the training set and test it with the testing set. We will also be grabbing the Adjusted $R^2$ value as well to further confirm which of our models is the best.
+
+```{r, warning=FALSE}
+test_n <- c(1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 50, 20)
+model_summaries <- rep(NA, length(test_n))
+model_error <- rep(NA, length(test_n))
+model_adjr2 <- rep(NA, length(test_n))
+set.seed(1)
+
+for (i in 1:length(test_n)) {  
+  index <- sample(2133, test_n[i])
+  train <- filter_scores[-index, ]
+  test <- filter_scores[index, ]
+  
+  best_reg <- regsubsets(posttest ~ ., data = train, method = 'exhaustive', nvmax = 8)
+  best.summary <- summary(best_reg)
+  model_summaries[i] <- best.summary
+  test.best <- model.matrix(posttest ~ ., data = test)
+
+  val.errors <- rep(NA, 8)
+  for (j in 1:8) {
+   coefi <- coef(best_reg, id = j)
+   pred <- test.best[, names(coefi)] %*% coefi
+   val.errors[j] <- mean((test$posttest - pred)^2)
+  }
+  model_error[i] <- which.min(val.errors)
+  model_adjr2[i] <- best.summary$adjr2
+}
+
+model_error
+model_adjr2
+which.max(model_adjr2)
+
+```
+
+This tells us that our best model should be the one with five variables and a training/testing ratio of 1333:900. We can take this model and recreate that model below and extract the coefficients.
+
+```{r}
+index <- sample(2133, 900)
+  train <- filter_scores[-index, ]
+  test <- filter_scores[index, ]
+  
+  best_reg <- regsubsets(posttest ~ ., data = train, method = 'exhaustive', nvmax = 8)
+
+coef(best_reg, 5)
+```
+
+## Analysis
+
+With all of this together, our model comes out to: 
+
+$$Y = \beta_0 + \beta_1\mbox{(school_setting Suburban)} + \beta_2\mbox{(teaching_method)} + \beta_3\mbox{(n_student)} + \beta_4\mbox{(lunch)} + \beta_5\mbox{(pretest)}$$
+
+Where:
+  
+  * $\beta_0$ = 23.06
+  * $\beta_1$ = 0.71
+  * $\beta_2$ = -6.06
+  * $\beta_3$ = -0.08
+  * $\beta_4$ = -1.05
+  * $\beta_5$ = 0.91
+
+And of the five variables used in the model, here are the results:
+
+  * `Intercept` : Assuming that all other variables are equal to zero, our posttest score will, on average, be equal to 23.06.
+  * `school_setting Suburban` : This shows that a student who goes to a suburban school will, on average, achieve 0.71 more on the `posttest` compared to someone who does not attend a suburban school.
+  * `teaching_method` : This shows that a student who was taught the subject matter with standard teaching will, on average, achieve 6.06 less on the `posttest` compared to those who had the experimental teaching method.
+  * `n_student` : This shows for each additional student in the classroom of the student being observed, the observed student's `posttest` score, on average, decreased by 0.08.
+  * `lunch` : Students who qualify for reduced or free lunches (those in lower income brackets) will, on average, see a `posttest` score of 1.05 less than those who do not qualify for reduced or free lunches (those in higher income brackets).
+  * `pretest` : This shows that for each point scored on the pretest will, on average, increase the student's `posttest` score by 0.91.
+  
+## Answering Our Questions
+
+Now that we have conducted our analysis of this data set, we can finally answer our initial questions posed at the beginning.
+
+  1. **Which variables have the most effect on the** `posttest` **score?** It appears that `pretest` has a big effect on `posttest`, as it is a quantitative variable that will significiantly affect our score. One example is that a student with a `pretest` score of 90 will, on average, achieve 9.1 more points than a student with a `pretest` score of 80. We also saw that the students taught with the experimental `teaching_method` scored, on average, 6 points more than those with the standard teaching method.
+  
+  2. **Do students in lower income brackets perform better than those in higher income brackets on average? What about male students or female students?** We actually saw that students who did qualify for free or reduced lunch, on average, scored worse than those who did not qualify. Our model also did not include `gender` when it was being fitted using best subset selection, and thus, our model saw no correlation in `gender` and `posttest`.
+  
+  3. **How many variables should we expect to see in our final model?** Our final model had 5 variables in total.
+  
+  4. **What is the best ratio of training to testing to use when splitting our data?** Our final model was fitted with a training-to-testing ratio of 1333:900.
+  
+  5. **Which variable selection method was the most efficient to use? How might the data look differently if we chose something other than the best?** We found that best subset selection was still feasible due to the relatively small amount of variables, and even when we fit models with forward and backward selection with everything else kept the same, our results remained the same as when we fit it with best subset selection.
+  
+## Closing Remarks
+
+While these results are pretty interesting, this was a relatively small data set. More data should be collected and new models and analyses conducted in similar fields in an attempt to further validate and reinforce the results. Our dive into machine learning here has taught us about a new and unique way of analyzing data, allowing us to let the computer do most of the work in figuring out the models.
