@@ -1,0 +1,26 @@
+Employee_ID,Employee_Fname,Employee_Lname,Deparment,Project,City,DOB,Gender
+1,John,Cameroon,HR,P1,"Chicago, USA",1/1/76,M
+2,Calvin,Smith,HR,P1,"Los Angles, USA",2/5/87,M
+3,Sanjay,Vijay,ADMIN,P2,"Los Angles, USA",1/12/98,M
+4,Rohan,Aman,Software Engineer,P3,"Chicago, USA",12/18/93,M
+5,Emily,Janzen,ADMIN,P2,"Los Angles, USA",5/5/95,F
+6,Sonya,Janzen,HR,P1,"Chicago, USA",12/2/88,F
+7,CJ,Pen,Data Engineer,P4,"Chicago, USA",3/14/89,M
+8,Angel,Correa,Data Engineer,P4,"Chicago, USA",1/12/88,M
+9,Christian,Lietz,Data Engineer,P4,"Chicago, USA",3/19/90,M
+10,Yusuf,Umkkoko,ADMIN,P2,"Los Angles, USA",12/12/89,F
+11,Tyler,Adams,ADMIN,P2,"Los Angles, USA",3/7/94,M
+12,Emily,Ratjoski,Software Engineer,P3,"Los Angles, USA",11/11/83,F
+13,Cece,Cooper,Software Engineer,P3,"Chicago, USA",10/29/73,F
+14,Emily,Claire,ADMIN,P2,"Los Angles, USA",9/11/72,F
+15,Leandro,Paredes,ADMIN,P2,"Los Angles, USA",7/14/96,M
+16,Kristi,Noem,ADMIN,P2,"Chicago, USA",6/12/77,F
+17,Katelyn,Kotas,Software Engineer,P3,"Los Angles, USA",2/9/79,F
+18,Khoan,Khan,Software Engineer,P3,"Chicago, USA",1/1/89,F
+19,Tavian,Shaw,ADMIN,P2,"Chicago, USA",10/6/98,M
+20,Pam,Amderson,ADMIN,P2,"Chicago, USA",6/6/88,F
+21,Christian,Bale,HR,P1,"Los Angles, USA",6/29/96,M
+22,Ben,Ten,ADMIN,P2,"Los Angles, USA",8/24/97,M
+23,Mustafa,Ali,Data Engineer,P4,"Los Angles, USA",5/31/93,M
+24,Chris,Jericho,ADMIN,P2,"Chicago, USA",7/29/80,M
+25,Dave,Dancler,HR,P1,"Los Angles, USA",5/11/93,M
